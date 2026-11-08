@@ -5,7 +5,6 @@
 #define MAX_ITENS 50
 #define MAX_TENTATIVAS 3
 
-
 typedef struct {
     char nome[50];
     char telefone[20];
@@ -38,23 +37,32 @@ typedef struct {
 
 
 char nomes_categorias[3][20] = {"ALIMENTOS", "ACESSORIOS", "HIGIENE"};
-char nomes_produtos[3][3][30];
-float precos_produtos[3][3];
 
+char nomes_produtos[3][3][30] = {
+    {"Racao cao 10kg", "Racao gato 3kg", "Petisco"},
+    {"Coleira", "Guia", "Caminha"},
+    {"Shampoo", "Tapete higienico", "Escova"}
+};
 
-int lerInteiroSeguro() {
-    int valor, status;
-    do {
-        status = scanf("%d", &valor);
-        while (getchar() != '\n');
-        if (status != 1) {
-            printf("[ERRO] Entrada invalida! Digite um numero: ");
+float precos_produtos[3][3] = {
+    {120.00, 65.00, 15.00},
+    {25.00, 30.00, 80.00},
+    {18.00, 45.00, 22.00}
+};
+
+char nomes_servicos[3][30] = {"Banho", "Tosa", "Consulta"};
+
+float precos_servicos[3] = {50.00, 80.00, 100.00};
+
+float calcularServicos(Atendimento *a) {
+    float total_servicos = 0.0;
+    for (int i = 0; i < 3; i++) {
+        if (a->itens[i].qtd > 0) {
+            total_servicos += a->itens[i].val;
         }
-    } while (status != 1);
-    return valor;
+    }
+    return total_servicos;
 }
-
-
 void limparAtendimento(Atendimento *a) {
     a->cliente.cadastrado = 0;
     a->pet.cadastrado = 0;
@@ -62,80 +70,22 @@ void limparAtendimento(Atendimento *a) {
     a->total_geral = 0.0;
 }
 
-
-void garantirArquivoUsuarios() {
-    FILE *f = fopen("usuarios.txt", "r");
-    if (!f) {
-        f = fopen("usuarios.txt", "w");
-        fprintf(f, "admin 1234\n");
-    }
-    if (f) fclose(f);
-}
-
-int login(Atendimento *a) {
-    char usuario[30], senha[30];
-    char u_arq[30], s_arq[30];
-    int tentativas = 0, autenticado = 0;
-
-    garantirArquivoUsuarios();
-
-    while (tentativas < MAX_TENTATIVAS) {
-        printf("\n===== LOGIN DO FUNCIONARIO =====\n");
-        printf("Usuario: ");
-        scanf(" %29[^\n]", usuario);
-        printf("Senha: ");
-        scanf(" %29[^\n]", senha);
-        while (getchar() != '\n');
-
-        FILE *f = fopen("usuarios.txt", "r");
-        if (f) {
-            while (fscanf(f, "%s %s", u_arq, s_arq) != EOF) {
-                if (strcmp(usuario, u_arq) == 0 && strcmp(senha, s_arq) == 0) {
-                    strcpy(a->funcionario, usuario);
-                    autenticado = 1;
-                    break;
-                }
-            }
-            fclose(f);
-        }
-
-        if (autenticado) {
-            printf("\nBem-vindo(a), %s!\n", a->funcionario);
+int logar(char usuario[]){
+    int senha[10];
+    int tentativa;
+    for(tentativa = 1; tentativa <= 3; tentativa++){
+        printf("Usuario: \n");
+        scanf("%s[^\n]", usuario);
+        printf("Senha: \n");
+        scanf("%d", senha);
+        if(strcmp(usuario, "admin") == 0 && strcmp(senha, 1234) == 0){
             return 1;
-        }
         
-        tentativas++;
-        printf("[ERRO] Usuario ou senha incorretos! (%d/%d)\n", tentativas, MAX_TENTATIVAS);
-    }
-    printf("\nNumero maximo de tentativas atingido. Encerrando...\n");
+        }
+        printf("Dados inválidos! Tentativas restantes: %d\n", 3 - tentativa);
     return 0;
+    }    
 }
-
-
-void carregarProdutos() {
-    FILE *f = fopen("produtos.txt", "r");
-    if (!f) {
-        f = fopen("produtos.txt", "w");
-        
-        fprintf(f, "Racao_cao_10kg 120.00 Racao_gato_3kg 65.00 Petisco 15.00\n");
-        fprintf(f, "Coleira 25.00 Guia 30.00 Caminha 80.00\n");
-        fprintf(f, "Shampoo 18.00 Tapete_higienico 45.00 Escova 22.00\n");
-        fclose(f);
-        f = fopen("produtos.txt", "r");
-    }
-    
-    for (int cat = 0; cat < 3; cat++) {
-        for (int p = 0; p < 3; p++) {
-            fscanf(f, "%29s %f", nomes_produtos[cat][p], &precos_produtos[cat][p]);
-            
-            for(int i = 0; nomes_produtos[cat][p][i]; i++) {
-                if(nomes_produtos[cat][p][i] == '_') nomes_produtos[cat][p][i] = ' ';
-            }
-        }
-    }
-    fclose(f);
-}
-
 
 int registrarItem(Atendimento *a, char descricao[], int quantidade, float valor) {
     if (a->total_itens >= MAX_ITENS) {
@@ -150,6 +100,7 @@ int registrarItem(Atendimento *a, char descricao[], int quantidade, float valor)
     return 1;
 }
 
+
 void menuCadastros(Atendimento *a) {
     int opcao;
     do {
@@ -158,7 +109,7 @@ void menuCadastros(Atendimento *a) {
         printf(" 2 - Cadastrar pet\n");
         printf(" 0 - Voltar\n");
         printf("Escolha: ");
-        opcao = lerInteiroSeguro();
+        scanf("%d", &opcao);
 
         switch (opcao) {
             case 1:
@@ -179,7 +130,7 @@ void menuCadastros(Atendimento *a) {
 
                     do {
                         printf("Especie (1 - Cao, 2 - Gato): ");
-                        escolha = lerInteiroSeguro();
+                        scanf("%d", &escolha);
                     } while (escolha != 1 && escolha != 2);
                     strcpy(a->pet.especie, (escolha == 1) ? "Cao" : "Gato");
 
@@ -188,9 +139,9 @@ void menuCadastros(Atendimento *a) {
 
                     do {
                         printf("Porte (1 - Pequeno, 2 - Medio, 3 - Grande): ");
-                        a->pet.porte_codigo = lerInteiroSeguro();
+                        scanf("%d", &a->pet.porte_codigo);
                     } while (a->pet.porte_codigo < 1 || a->pet.porte_codigo > 3);
-                    
+
                     if (a->pet.porte_codigo == 1) strcpy(a->pet.porte, "Pequeno");
                     else if (a->pet.porte_codigo == 2) strcpy(a->pet.porte, "Medio");
                     else strcpy(a->pet.porte, "Grande");
@@ -198,6 +149,106 @@ void menuCadastros(Atendimento *a) {
                     a->pet.cadastrado = 1;
                     printf("=> Pet cadastrado!\n");
                 }
+                break;
+            case 0:
+                printf("Voltando...\n");
+                break;
+            default:
+                printf("Opcao invalida!\n");
+                break;
+        }
+    } while (opcao != 0);
+}
+
+void serviços(Atendimento *a) {
+    int servico;
+    printf("\n--------- SERVICOS ----------\n");
+    for (int i = 0; i < 3; i++) {
+        printf("%d - %s (R$ %.2f)\n", i + 1, nomes_servicos[i], precos_servicos[i]);
+    }
+    printf("Escolha o servico: ");
+    scanf("%d", &servico);
+    if (servico < 1 || servico > 3) {
+        printf("[ERRO] Servico invalido!\n");
+        return;
+    }
+    else {
+        servico--;
+        float valor_total = precos_servicos[servico];
+        if (registrarItem(a, nomes_servicos[servico], 1, valor_total)) {
+            printf("=> Servico registrado com sucesso!\n");
+        }
+    }
+}
+
+void produtos(Atendimento *a) {
+    int categoria, produto, quantidade;
+    printf("\n--------- PRODUTOS ----------\n");
+    for (int i = 0; i < 3; i++) {
+        printf("%d - %s\n", i + 1, nomes_categorias[i]);
+    }
+    printf("Escolha a categoria: ");
+    scanf("%d", &categoria);
+    if (categoria < 1 || categoria > 3) {
+        printf("[ERRO] Categoria invalida!\n");
+        return;
+    }
+    categoria--;
+
+    printf("\nProdutos da categoria %s:\n", nomes_categorias[categoria]);
+    for (int j = 0; j < 3; j++) {
+        printf("%d - %s (R$ %.2f)\n", j + 1, nomes_produtos[categoria][j], precos_produtos[categoria][j]);
+    }
+    printf("Escolha o produto: ");
+    scanf("%d", &produto);
+    if (produto < 1 || produto > 3) {
+        printf("[ERRO] Produto invalido!\n");
+        return;
+    }
+    produto--;
+
+    printf("Quantidade: ");
+    scanf("%d", &quantidade);
+    if (quantidade <= 0) {
+        printf("[ERRO] Quantidade invalida!\n");
+        return;
+    }
+
+    float valor_total = precos_produtos[categoria][produto] * quantidade;
+    if (registrarItem(a, nomes_produtos[categoria][produto], quantidade, valor_total)) {
+        printf("=> Produto registrado com sucesso!\n");
+    }
+}
+void menuPrincipal(Atendimento *a) {
+    int opcao;
+    do {
+        printf("\n--------- MENU PRINCIPAL ----------\n");
+        printf(" 1 - Cadastros\n");
+        printf(" 2 - Serviços\n");
+        printf(" 3 - Produtos\n");
+        printf(" 4 - Comprovante Final\n");
+        printf(" 0 - Sair\n");
+        printf("Escolha: ");
+        scanf("%d", &opcao);
+
+        switch (opcao) {
+            case 1:
+                menuCadastros(a);
+                break;
+            case 2:
+                serviços(a);
+                break;
+            case 3:
+                produtos(a);
+                break;
+            case 4:
+                // Chamar função para gerar comprovante final
+                break;
+            case 0:
+                printf("Saindo...\n");
+                break;
+            default:
+                printf("Opcao invalida!\n");
                 break;
         }
     } while (opcao != 0);
