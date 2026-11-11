@@ -71,14 +71,14 @@ void limparAtendimento(Atendimento *a) {
 }
 
 int logar(char usuario[]){
-    int senha[10];
+    char senha[10];
     int tentativa;
     for(tentativa = 1; tentativa <= 3; tentativa++){
         printf("Usuario: \n");
         scanf("%s[^\n]", usuario);
         printf("Senha: \n");
-        scanf("%d", senha);
-        if(strcmp(usuario, "admin") == 0 && strcmp(senha, 1234) == 0){
+        scanf("%s", senha);
+        if(strcmp(usuario, "admin") == 0 && strcmp(senha, "1234") == 0){
             return 1;
         
         }
@@ -219,6 +219,22 @@ void produtos(Atendimento *a) {
         printf("=> Produto registrado com sucesso!\n");
     }
 }
+
+
+void comprovanteFinal(Atendimento *a) {
+    printf("\n--------- COMPROVANTE FINAL ----------\n");
+    printf("Cliente: %s\n", a->cliente.nome);
+    printf("Telefone: %s\n", a->cliente.telefone);
+    printf("Pet: %s (%s, %s)\n", a->pet.nome, a->pet.especie, a->pet.raca);
+    printf("Porte: %s\n", a->pet.porte);
+    printf("\nItens do atendimento:\n");
+    for (int i = 0; i < a->total_itens; i++) {
+        printf("%d - %s | Quantidade: %d | Valor: R$ %.2f\n", i + 1, a->itens[i].desc, a->itens[i].qtd, a->itens[i].val);
+    }
+    printf("\nTotal Geral: R$ %.2f\n", a->total_geral);
+}
+
+
 void menuPrincipal(Atendimento *a) {
     int opcao;
     do {
@@ -242,7 +258,7 @@ void menuPrincipal(Atendimento *a) {
                 produtos(a);
                 break;
             case 4:
-                // Chamar função para gerar comprovante final
+                comprovanteFinal(a);
                 break;
             case 0:
                 printf("Saindo...\n");
@@ -252,4 +268,21 @@ void menuPrincipal(Atendimento *a) {
                 break;
         }
     } while (opcao != 0);
+}
+
+int main() {
+    Atendimento atendimento;
+    limparAtendimento(&atendimento);
+
+    char usuario[30];
+    if (logar(usuario)) {
+        printf("Bem-vindo, %s!\n", usuario);
+        menuPrincipal(&atendimento);
+    } else {
+        printf("Falha no login. Encerrando o programa.\n");
+    }
+
+    menuPrincipal(&atendimento);
+    
+    return 0;
 }
